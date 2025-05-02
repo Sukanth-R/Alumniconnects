@@ -20,6 +20,7 @@ class LoginPageState extends State<LoginPage>
   TabController? _tabController;
   String _errorMessage = '';
   bool _isLoading = false;
+  bool _showPassword = false; // Use a simple boolean instead of ValueNotifier
 
   @override
   void initState() {
@@ -97,140 +98,378 @@ class LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final bool isSmallScreen = screenSize.width < 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(MdiIcons.school, color: Colors.white),
-            SizedBox(width: 8),
-            Text('AlumniConnect'),
-          ],
-        ),
-        backgroundColor: Colors.blueAccent,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          tabs: [
-            Tab(text: 'Admin'),
-            Tab(text: 'Student'),
-            Tab(text: 'Alumni'),
-          ],
-        ),
-      ),
       body: Container(
-        color: Colors.grey[100],
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildLoginForm('admin', _adminFormKey),
-            _buildLoginForm('student', _studentFormKey),
-            _buildLoginForm('alumni', _alumniFormKey),
-          ],
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.blue.shade800,
+              Colors.indigo.shade700,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildLoginForm('admin', _adminFormKey, isSmallScreen),
+                    _buildLoginForm('student', _studentFormKey, isSmallScreen),
+                    _buildLoginForm('alumni', _alumniFormKey, isSmallScreen),
+                  ],
+                ),
+              ),
+              _buildFooter(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLoginForm(String role, GlobalKey<FormState> formKey) {
-    return Center(
-      child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  role == 'admin'
-                      ? MdiIcons.accountKey
-                      : role == 'student'
-                          ? MdiIcons.accountSchool
-                          : MdiIcons.accountStar,
-                  size: 48,
-                  color: Colors.blueAccent,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  '${role.capitalize()} Login',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.blueAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                SizedBox(height: 24),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: role == 'student' ? 'Kongu Email' : 'Username',
-                    prefixIcon: Icon(MdiIcons.account),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter ${role == 'student' ? 'Kongu email' : 'username'}';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(MdiIcons.lock),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter password';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 24),
-                if (_errorMessage.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      _errorMessage,
-                      style: TextStyle(color: Colors.red, fontSize: 14),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                _isLoading
-                    ? CircularProgressIndicator()
-                    : ElevatedButton.icon(
-                        icon: Icon(MdiIcons.login),
-                        label: Text('Login'),
-                        onPressed: () => _login(role),
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 24),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                if (role == 'alumni') ...[
-                  SizedBox(height: 16),
-                  TextButton.icon(
-                    icon: Icon(MdiIcons.accountPlus),
-                    label: Text('Sign Up as Alumni'),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/alumni_signup');
-                    },
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              ],
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Icon(MdiIcons.school, size: 40, color: Colors.indigo.shade800),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'AlumniConnect',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Building Bridges, Connecting Lives',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w300,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: Colors.white.withOpacity(0.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
+              ),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.6),
+              labelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
+              tabs: const [
+                Tab(text: 'Admin'),
+                Tab(text: 'Student'),
+                Tab(text: 'Alumni'),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginForm(String role, GlobalKey<FormState> formKey, bool isSmallScreen) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double cardWidth = constraints.maxWidth;
+        // Set max width for larger screens
+        if (cardWidth > 600) {
+          cardWidth = 500;
+        }
+
+        return Center(
+          child: SingleChildScrollView(
+            child: Container(
+              width: cardWidth,
+              margin: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 24, 
+                vertical: isSmallScreen ? 12 : 24,
+              ),
+              child: Card(
+                elevation: 12,
+                shadowColor: Colors.black38,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 20 : 32),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.blue.shade50,
+                          child: Icon(
+                            role == 'admin'
+                                ? MdiIcons.accountKey
+                                : role == 'student'
+                                    ? MdiIcons.accountSchool
+                                    : MdiIcons.accountStar,
+                            size: 40,
+                            color: Colors.indigo,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          '${role.capitalize()} Login',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Please enter your credentials to continue',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        _buildTextField(
+                          controller: _usernameController,
+                          labelText: role == 'student' ? 'Kongu Email' : 'Username',
+                          prefixIcon: MdiIcons.account,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildPasswordField(),
+                        const SizedBox(height: 24),
+                        if (_errorMessage.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage,
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (_errorMessage.isNotEmpty) const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton.icon(
+                                  icon: Icon(MdiIcons.login),
+                                  label: Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  onPressed: () => _login(role),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.indigo.shade700,
+                                    foregroundColor: Colors.white,
+                                    elevation: 3,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                        if (role == 'alumni') ...[
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            icon: Icon(MdiIcons.accountPlus),
+                            label: Text(
+                              'Sign Up as Alumni',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/alumni_signup');
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.indigo.shade700,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData prefixIcon,
+    bool obscureText = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      style: TextStyle(fontSize: 15),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(color: Colors.grey.shade700),
+        prefixIcon: Icon(prefixIcon, color: Colors.indigo.shade600),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.indigo.shade600, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.red.shade300),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter $labelText';
+        }
+        return null;
+      },
+    );
+  }
+  
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: !_showPassword,
+      style: TextStyle(fontSize: 15),
+      decoration: InputDecoration(
+        labelText: 'Password',
+        labelStyle: TextStyle(color: Colors.grey.shade700),
+        prefixIcon: Icon(MdiIcons.lock, color: Colors.indigo.shade600),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _showPassword ? MdiIcons.eye : MdiIcons.eyeOff,
+            color: Colors.grey.shade600,
+          ),
+          onPressed: () {
+            setState(() {
+              _showPassword = !_showPassword;
+            });
+          },
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.indigo.shade600, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.red.shade300),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter password';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: Text(
+        '© ${DateTime.now().year} Kongu Engineering College',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.white.withOpacity(0.7),
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
